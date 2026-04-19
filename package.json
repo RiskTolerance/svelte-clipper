@@ -1,6 +1,6 @@
 {
 	"name": "svelte-clipper",
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"description": "Responsive, reactive SVG clip paths for Svelte 5 — project clip shapes across elements with independent coordinate spaces.",
 	"author": "Isaac Druin <isaac.druin@gmail.com>",
 	"license": "MIT",
