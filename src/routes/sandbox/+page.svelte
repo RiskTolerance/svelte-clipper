@@ -2,6 +2,7 @@
 	import Clipper from '$lib/svelte/Clipper.svelte';
 	import ClippedBy from '$lib/svelte/ClippedBy.svelte';
 	import img from '$lib/assets/img2.jpg';
+	import CatSvg from '$lib/svgs/CatSvg.svelte';
 
 	const STAR_POINTS =
 		'150,20 179,109 272,109 197,163 226,252 150,198 74,252 103,163 28,109 121,109';
@@ -54,6 +55,20 @@
 	<div class="ref img-target">
 		<ClippedBy clipper={['star-spin-1', 'star-spin-2', 'star-spin-3']} mode="clip" class="fill">
 			<img src={img} alt="" class="clipped-img" />
+		</ClippedBy>
+	</div>
+</section>
+
+<section class="stage">
+	<h2>complex multi-path svg (cat) clipping a div</h2>
+	<div class="ref cat-ref">
+		<Clipper id="cat" preview>
+			<CatSvg width="460" height="460" />
+		</Clipper>
+	</div>
+	<div class="ref target">
+		<ClippedBy clipper="cat" mode="clip" class="fill">
+			<div class="cat-content"></div>
 		</ClippedBy>
 	</div>
 </section>
@@ -162,6 +177,20 @@
 		top: 0;
 		width: 100%;
 		height: 100%;
+	}
+
+	.cat-ref {
+		left: 50%;
+		top: 50%;
+		transform: translate(-50%, -50%);
+		pointer-events: none;
+		z-index: 2;
+	}
+
+	.cat-content {
+		width: 100%;
+		height: 100%;
+		background: #c2255c;
 	}
 
 	.clipped-img {

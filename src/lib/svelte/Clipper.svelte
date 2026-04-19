@@ -18,9 +18,11 @@
 
 	$effect(() => {
 		if (!wrapper) return
-		const shape = wrapper.querySelector(
-			SUPPORTED_SHAPE_TAGS.join(',')
-		) as SVGGraphicsElement | null
+		const svgEl = wrapper.querySelector('svg') as SVGSVGElement | null
+		const shape = (svgEl ??
+			(wrapper.querySelector(
+				SUPPORTED_SHAPE_TAGS.join(',')
+			) as SVGGraphicsElement | null)) as SVGGraphicsElement | null
 		if (!shape) return
 		registerClipper(id, shape)
 		const ro = new ResizeObserver(() => notifyClipper(id))

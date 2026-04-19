@@ -30,6 +30,16 @@ export const SUPPORTED_SHAPE_TAGS = [
 export function shapeToPath(el: SVGGraphicsElement, matrix: DOMMatrix): string {
 	const tag = el.tagName.toLowerCase()
 
+	if (tag === 'svg' || tag === 'g') {
+		const shapes = (el as Element).querySelectorAll(SUPPORTED_SHAPE_TAGS.join(','))
+		let out = ''
+		for (const s of Array.from(shapes)) {
+			const part = shapeToPath(s as SVGGraphicsElement, matrix)
+			if (part) out += (out ? ' ' : '') + part
+		}
+		return out
+	}
+
 	if (tag === 'ellipse') {
 		const cx = parseFloat(el.getAttribute('cx') || '0')
 		const cy = parseFloat(el.getAttribute('cy') || '0')

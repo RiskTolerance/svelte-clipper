@@ -21,26 +21,40 @@
 	const clipId = `clip-${Math.random().toString(36).slice(2, 10)}`
 	let ids = $derived(Array.isArray(clipper) ? clipper : [clipper])
 
+	let lastSig = ''
 	function update() {
 		if (!wrapper) return
 		const rect = wrapper.getBoundingClientRect()
-		w = rect.width
-		h = rect.height
-		let d = ''
+		const matrices: Array<{ shape: SVGGraphicsElement; m: DOMMatrix }> = []
+		let sig = `${rect.width}x${rect.height}`
 		for (const id of ids) {
 			const shape = getClipperEl(id)
 			if (!shape) continue
 			const sourceCTM = shape.getScreenCTM()
 			if (!sourceCTM) continue
 			const m = new DOMMatrix().translateSelf(-rect.left, -rect.top).multiply(sourceCTM)
+			matrices.push({ shape, m })
+			sig += `|${id}:${m.a.toFixed(3)},${m.b.toFixed(3)},${m.c.toFixed(3)},${m.d.toFixed(3)},${m.e.toFixed(2)},${m.f.toFixed(2)}`
+		}
+		if (sig === lastSig) return
+		lastSig = sig
+		w = rect.width
+		h = rect.height
+		let d = ''
+		for (const { shape, m } of matrices) {
 			const part = shapeToPath(shape, m)
 			if (part) d += (d ? ' ' : '') + part
 		}
 		shapeD = d
 	}
 
+	let rafId: number | undefined
 	function scheduleUpdate() {
-		requestAnimationFrame(update)
+		if (rafId !== undefined) return
+		rafId = requestAnimationFrame(() => {
+			rafId = undefined
+			update()
+		})
 	}
 
 	$effect(() => observeLayout(scheduleUpdate, wrapper ? [wrapper] : []))
