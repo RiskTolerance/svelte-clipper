@@ -6,12 +6,12 @@
 	"license": "MIT",
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/USERNAME/svelte-clipper.git"
+		"url": "git+https://github.com/RiskTolerance/svelte-clipper.git"
 	},
 	"bugs": {
-		"url": "https://github.com/USERNAME/svelte-clipper/issues"
+		"url": "https://github.com/RiskTolerance/svelte-clipper/issues"
 	},
-	"homepage": "https://github.com/USERNAME/svelte-clipper#readme",
+	"homepage": "https://github.com/RiskTolerance/svelte-clipper#readme",
 	"scripts": {
 		"dev": "vite dev",
 		"build": "vite build && npm run prepack",
