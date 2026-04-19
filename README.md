@@ -19,7 +19,7 @@ Responsive, reactive SVG clip paths for Svelte 5. Define a clip shape anywhere i
 ## Installation
 
 ```sh
-npm install dynamicbool
+npm i svelte-clipper
 ```
 
 Svelte 5 is a peer dependency.
