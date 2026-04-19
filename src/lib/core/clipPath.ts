@@ -18,6 +18,15 @@ function parsePoints(attr: string | null): number[] {
  * through the given affine matrix. Supports: ellipse, circle, rect, polygon, polyline.
  * Returns empty string for unsupported element types.
  */
+export const SUPPORTED_SHAPE_TAGS = [
+	'ellipse',
+	'circle',
+	'rect',
+	'polygon',
+	'polyline',
+	'path'
+] as const
+
 export function shapeToPath(el: SVGGraphicsElement, matrix: DOMMatrix): string {
 	const tag = el.tagName.toLowerCase()
 
@@ -48,6 +57,33 @@ export function shapeToPath(el: SVGGraphicsElement, matrix: DOMMatrix): string {
 		const p3 = projectPoint({ x: x + w, y: y + h }, matrix)
 		const p4 = projectPoint({ x, y: y + h }, matrix)
 		return `M ${p1.x},${p1.y} L ${p2.x},${p2.y} L ${p3.x},${p3.y} L ${p4.x},${p4.y} Z`
+	}
+
+	if (tag === 'path') {
+		const dAttr = el.getAttribute('d') || ''
+		const subpaths = dAttr.match(/[Mm][^Mm]*/g) || []
+		if (!subpaths.length) return ''
+		const ns = 'http://www.w3.org/2000/svg'
+		const scale = Math.max(
+			Math.hypot(matrix.a, matrix.b),
+			Math.hypot(matrix.c, matrix.d)
+		)
+		let out = ''
+		for (const sub of subpaths) {
+			const temp = document.createElementNS(ns, 'path') as SVGPathElement
+			temp.setAttribute('d', sub)
+			const total = temp.getTotalLength?.() ?? 0
+			if (total <= 0) continue
+			const projectedLength = total * scale
+			const samples = Math.max(32, Math.ceil(projectedLength / 2))
+			for (let i = 0; i <= samples; i++) {
+				const pt = temp.getPointAtLength((i / samples) * total)
+				const p = projectPoint({ x: pt.x, y: pt.y }, matrix)
+				out += (i === 0 ? ' M' : ' L') + ` ${p.x},${p.y}`
+			}
+			out += ' Z'
+		}
+		return out.trim()
 	}
 
 	if (tag === 'polygon' || tag === 'polyline') {

@@ -1,87 +1,79 @@
 <script lang="ts">
-	import { onMount, type Snippet } from 'svelte'
-	import { composeProjection } from '$lib/core/projection.js'
-	import { observeLayout } from '$lib/core/observe.js'
+	import type { Snippet } from 'svelte'
 	import { shapeToPath } from '$lib/core/clipPath.js'
+	import { observeLayout } from '$lib/core/observe.js'
+	import { getClipperEl, subscribeClipper } from '$lib/core/clipperRegistry.js'
 
 	type Props = {
-		ref: SVGGraphicsElement | undefined
+		clipper: string | string[]
 		mode?: 'clip' | 'subtract'
-		width?: number | string
-		height: number | string
-		fill?: string
 		class?: string
-		children?: Snippet
+		children: Snippet
 	}
 
-	let {
-		ref,
-		mode = 'clip',
-		width = '100%',
-		height,
-		fill,
-		class: className,
-		children
-	}: Props = $props()
+	let { clipper, mode = 'clip', class: className, children }: Props = $props()
 
-	let svgEl: SVGSVGElement
+	let wrapper: HTMLElement | undefined = $state()
+	let shapeD = $state('')
 	let w = $state(0)
 	let h = $state(0)
-	let shapeD = $state('')
 
 	const clipId = `clip-${Math.random().toString(36).slice(2, 10)}`
+	let ids = $derived(Array.isArray(clipper) ? clipper : [clipper])
 
 	function update() {
-		if (!svgEl || !ref) return
-		const sourceCTM = ref.getScreenCTM()
-		const targetCTM = svgEl.getScreenCTM()
-		if (!sourceCTM || !targetCTM) return
-		const m = composeProjection(sourceCTM, targetCTM)
-		const rect = svgEl.getBoundingClientRect()
+		if (!wrapper) return
+		const rect = wrapper.getBoundingClientRect()
 		w = rect.width
 		h = rect.height
-		shapeD = shapeToPath(ref, m)
+		let d = ''
+		for (const id of ids) {
+			const shape = getClipperEl(id)
+			if (!shape) continue
+			const sourceCTM = shape.getScreenCTM()
+			if (!sourceCTM) continue
+			const m = new DOMMatrix().translateSelf(-rect.left, -rect.top).multiply(sourceCTM)
+			const part = shapeToPath(shape, m)
+			if (part) d += (d ? ' ' : '') + part
+		}
+		shapeD = d
 	}
 
 	function scheduleUpdate() {
 		requestAnimationFrame(update)
 	}
 
-	onMount(scheduleUpdate)
-
+	$effect(() => observeLayout(scheduleUpdate, wrapper ? [wrapper] : []))
 	$effect(() => {
-		void ref
-		scheduleUpdate()
+		const unsubs = ids.map((id) => subscribeClipper(id, scheduleUpdate))
+		return () => unsubs.forEach((u) => u())
 	})
 
-	$effect(() => observeLayout(scheduleUpdate, svgEl ? [svgEl] : []))
-
-	$effect(() => {
-		if (!ref) return
-		const mo = new MutationObserver(scheduleUpdate)
-		mo.observe(ref, { attributes: true })
-		return () => mo.disconnect()
-	})
-
-	let clipD = $derived(
-		mode === 'subtract' ? `M 0,0 H ${w} V ${h} H 0 Z ${shapeD}` : shapeD
-	)
+	let clipD = $derived(mode === 'subtract' ? `M 0,0 H ${w} V ${h} H 0 Z ${shapeD}` : shapeD)
 </script>
 
+<div bind:this={wrapper} class={className} style="clip-path: url(#{clipId})">
+	{@render children()}
+</div>
+
 <svg
-	bind:this={svgEl}
-	{width}
-	{height}
+	class="clip-defs"
 	xmlns="http://www.w3.org/2000/svg"
-	class={className}
+	aria-hidden="true"
 >
 	<defs>
-		<clipPath id={clipId}><path clip-rule="evenodd" d={clipD} /></clipPath>
+		<clipPath id={clipId} clipPathUnits="userSpaceOnUse">
+			<path clip-rule="evenodd" d={clipD} />
+		</clipPath>
 	</defs>
-	<g clip-path="url(#{clipId})">
-		{#if fill}
-			<rect width="100%" height="100%" {fill} />
-		{/if}
-		{@render children?.()}
-	</g>
 </svg>
+
+<style>
+	.clip-defs {
+		position: absolute;
+		width: 0;
+		height: 0;
+		overflow: hidden;
+		pointer-events: none;
+	}
+</style>

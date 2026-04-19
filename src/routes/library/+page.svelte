@@ -1,39 +1,47 @@
 <script lang="ts">
-	import ClippedBy from '$lib/svelte/ClippedBy.svelte'
-
-	let circle1: SVGEllipseElement | undefined = $state()
-	let star1: SVGPolygonElement | undefined = $state()
-	let circle2: SVGEllipseElement | undefined = $state()
-	let star2: SVGPolygonElement | undefined = $state()
-
-	const STAR_POINTS =
-		'27.865 31.83 17.615 26.209 7.462 32.009 9.553 20.362 0.99 12.335 12.532 10.758 17.394 0 22.436 10.672 34 12.047 25.574 20.22'
+	import Clipper from '$lib/svelte/Clipper.svelte';
+	import ClippedBy from '$lib/svelte/ClippedBy.svelte';
 </script>
 
-<!-- Instance 1: star clipped by circle (orange star-shape visible only inside the circle) -->
+<!-- Instance 1: a star, clipped by a circle. -->
 <section class="stage">
-	<svg class="ref circle" width="360" height="360" xmlns="http://www.w3.org/2000/svg">
-		<ellipse bind:this={circle1} cx="180" cy="180" rx="180" ry="180" class="debug" />
-	</svg>
-	<svg class="ref star" width="260" height="260" viewBox="0 0 35 33" xmlns="http://www.w3.org/2000/svg">
-		<polygon bind:this={star1} points={STAR_POINTS} fill="transparent" />
-	</svg>
-	<ClippedBy ref={circle1} mode="clip" width="100%" height="100%" class="clip-layer">
-		<ClippedBy ref={star1} mode="clip" width="100%" height="100%" fill="#b5451b" />
-	</ClippedBy>
+	<div class="ref circle">
+		<Clipper id="c1" preview>
+			<svg width="360" height="360" xmlns="http://www.w3.org/2000/svg">
+				<ellipse cx="180" cy="180" rx="180" ry="180" />
+			</svg>
+		</Clipper>
+	</div>
+	<div class="ref star">
+		<ClippedBy clipper="c1" mode="clip">
+			<svg width="260" height="260" viewBox="0 0 35 33" xmlns="http://www.w3.org/2000/svg">
+				<polygon
+					points="27.865 31.83 17.615 26.209 7.462 32.009 9.553 20.362 0.99 12.335 12.532 10.758 17.394 0 22.436 10.672 34 12.047 25.574 20.22"
+					fill="#b5451b"
+				/>
+			</svg>
+		</ClippedBy>
+	</div>
 </section>
 
-<!-- Instance 2: circle clipped by star (inverted — blue circle with star-shaped hole) -->
+<!-- Instance 2: a circle, clipped by a star (subtract — circle with star-shaped hole). -->
 <section class="stage">
-	<svg class="ref circle" width="360" height="360" xmlns="http://www.w3.org/2000/svg">
-		<ellipse bind:this={circle2} cx="180" cy="180" rx="180" ry="180" class="debug" />
-	</svg>
-	<svg class="ref star" width="260" height="260" viewBox="0 0 35 33" xmlns="http://www.w3.org/2000/svg">
-		<polygon bind:this={star2} points={STAR_POINTS} fill="transparent" />
-	</svg>
-	<ClippedBy ref={circle2} mode="clip" width="100%" height="100%" class="clip-layer">
-		<ClippedBy ref={star2} mode="subtract" width="100%" height="100%" fill="#1b5fa8" />
-	</ClippedBy>
+	<div class="ref star">
+		<Clipper id="s2" preview>
+			<svg width="260" height="260" viewBox="0 0 35 33" xmlns="http://www.w3.org/2000/svg">
+				<polygon
+					points="27.865 31.83 17.615 26.209 7.462 32.009 9.553 20.362 0.99 12.335 12.532 10.758 17.394 0 22.436 10.672 34 12.047 25.574 20.22"
+				/>
+			</svg>
+		</Clipper>
+	</div>
+	<div class="ref circle">
+		<ClippedBy clipper="s2" mode="subtract">
+			<svg width="360" height="360" xmlns="http://www.w3.org/2000/svg">
+				<ellipse cx="180" cy="180" rx="180" ry="180" fill="#1b5fa8" />
+			</svg>
+		</ClippedBy>
+	</div>
 </section>
 
 <style>
@@ -57,18 +65,5 @@
 
 	.star {
 		transform: translate(-20%, -40%);
-	}
-
-	.debug {
-		fill: rgba(0, 0, 0, 0.04);
-		stroke: rgba(0, 0, 0, 0.55);
-		stroke-width: 2;
-		stroke-dasharray: 6 4;
-	}
-
-	:global(.clip-layer) {
-		position: absolute;
-		inset: 0;
-		pointer-events: none;
 	}
 </style>

@@ -6,7 +6,8 @@
 		{ href: '/', label: 'home' },
 		{ href: '/demo', label: 'demo (inline math)' },
 		{ href: '/ref-anchor', label: 'ref-anchor (projection lib)' },
-		{ href: '/library', label: 'library (ClippedBy)' }
+		{ href: '/library', label: 'library (ClippedBy)' },
+		{ href: '/sandbox', label: 'sandbox' }
 	]
 </script>
 
