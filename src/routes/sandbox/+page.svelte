@@ -6,6 +6,25 @@
 
 	const STAR_POINTS =
 		'150,20 179,109 272,109 197,163 226,252 150,198 74,252 103,163 28,109 121,109';
+
+	let lensA = $state({ x: 60, y: 60 });
+	let lensB = $state({ x: 180, y: 180 });
+
+	function startDrag(e: PointerEvent, target: { x: number; y: number }) {
+		e.preventDefault();
+		const onMove = (ev: PointerEvent) => {
+			target.x += ev.movementX;
+			target.y += ev.movementY;
+		};
+		const onUp = () => {
+			window.removeEventListener('pointermove', onMove);
+			window.removeEventListener('pointerup', onUp);
+			window.removeEventListener('pointercancel', onUp);
+		};
+		window.addEventListener('pointermove', onMove);
+		window.addEventListener('pointerup', onUp);
+		window.addEventListener('pointercancel', onUp);
+	}
 </script>
 
 {#snippet starSvg()}
@@ -70,6 +89,50 @@
 		<ClippedBy clipper="cat" mode="clip" class="fill">
 			<div class="cat-content"></div>
 		</ClippedBy>
+	</div>
+</section>
+
+<section class="stage lens-stage">
+	<h2>cross-dom: drag lenses in the panel to punch holes in the image</h2>
+	<div class="lens-split">
+		<div class="lens-panel">
+			<p class="lens-label">drag me →</p>
+			<div
+				class="lens-handle lens-a"
+				style="transform: translate({lensA.x}px, {lensA.y}px)"
+				onpointerdown={(e) => startDrag(e, lensA)}
+			>
+				<Clipper id="lensA" live>
+					<svg width="90" height="90" viewBox="0 0 90 90" xmlns="http://www.w3.org/2000/svg">
+						<circle cx="45" cy="45" r="45" />
+					</svg>
+				</Clipper>
+			</div>
+			<div
+				class="lens-handle lens-b"
+				style="transform: translate({lensB.x}px, {lensB.y}px)"
+				onpointerdown={(e) => startDrag(e, lensB)}
+			>
+				<Clipper id="lensB" live>
+					<svg width="70" height="70" viewBox="0 0 70 70" xmlns="http://www.w3.org/2000/svg">
+						<circle cx="35" cy="35" r="35" />
+					</svg>
+				</Clipper>
+			</div>
+		</div>
+		<div class="lens-reveal">
+			<div class="lens-under">
+				<span>👀 you found me</span>
+			</div>
+			<ClippedBy
+				clipper={['lensA', 'lensB']}
+				mode="subtract"
+				combine="union"
+				class="lens-cover"
+			>
+				<img src={img} alt="" class="clipped-img" />
+			</ClippedBy>
+		</div>
 	</div>
 </section>
 
@@ -191,6 +254,74 @@
 		width: 100%;
 		height: 100%;
 		background: #c2255c;
+	}
+
+	.lens-stage {
+		height: 560px;
+		touch-action: none;
+	}
+	.lens-split {
+		position: absolute;
+		inset: 60px 20px 20px;
+		display: flex;
+		gap: 24px;
+	}
+	.lens-panel {
+		position: relative;
+		width: 320px;
+		background: #1f2937;
+		border-radius: 8px;
+		overflow: hidden;
+		flex-shrink: 0;
+	}
+	.lens-label {
+		position: absolute;
+		top: 8px;
+		left: 12px;
+		margin: 0;
+		color: #9ca3af;
+		font-family: monospace;
+		font-size: 12px;
+	}
+	.lens-handle {
+		position: absolute;
+		top: 0;
+		left: 0;
+		cursor: grab;
+		touch-action: none;
+	}
+	.lens-handle:active {
+		cursor: grabbing;
+	}
+	.lens-a :global(circle) {
+		fill: #f59e0b;
+	}
+	.lens-b :global(circle) {
+		fill: #10b981;
+	}
+
+	.lens-reveal {
+		position: relative;
+		flex: 1;
+		border-radius: 8px;
+		overflow: hidden;
+		background: #111;
+	}
+	.lens-under {
+		position: absolute;
+		inset: 0;
+		display: grid;
+		place-items: center;
+		background: linear-gradient(135deg, #f472b6, #f59e0b, #10b981);
+		color: #111;
+		font-family: system-ui, sans-serif;
+		font-weight: 800;
+		font-size: 48px;
+		letter-spacing: 2px;
+	}
+	:global(.lens-cover) {
+		position: absolute;
+		inset: 0;
 	}
 
 	.clipped-img {

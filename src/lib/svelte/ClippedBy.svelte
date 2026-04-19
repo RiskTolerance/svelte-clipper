@@ -3,15 +3,47 @@
 	import { shapeToPath } from '$lib/core/clipPath.js'
 	import { observeLayout } from '$lib/core/observe.js'
 	import { getClipperEl, subscribeClipper } from '$lib/core/clipperRegistry.js'
+	import {
+		pathFromPathData,
+		pathToPathData,
+		pathBoolean,
+		PathBooleanOperation,
+		FillRule
+	} from 'path-bool'
+
+	type CombineOp =
+		| 'concat'
+		| 'union'
+		| 'difference'
+		| 'intersection'
+		| 'exclusion'
+		| 'division'
+		| 'fracture'
 
 	type Props = {
 		clipper: string | string[]
 		mode?: 'clip' | 'subtract'
+		combine?: CombineOp
 		class?: string
 		children: Snippet
 	}
 
-	let { clipper, mode = 'clip', class: className, children }: Props = $props()
+	let {
+		clipper,
+		mode = 'clip',
+		combine = 'concat',
+		class: className,
+		children
+	}: Props = $props()
+
+	const OP_MAP: Record<Exclude<CombineOp, 'concat'>, PathBooleanOperation> = {
+		union: PathBooleanOperation.Union,
+		difference: PathBooleanOperation.Difference,
+		intersection: PathBooleanOperation.Intersection,
+		exclusion: PathBooleanOperation.Exclusion,
+		division: PathBooleanOperation.Division,
+		fracture: PathBooleanOperation.Fracture
+	}
 
 	let wrapper: HTMLElement | undefined = $state()
 	let shapeD = $state('')
@@ -40,12 +72,27 @@
 		lastSig = sig
 		w = rect.width
 		h = rect.height
-		let d = ''
+		const parts: string[] = []
 		for (const { shape, m } of matrices) {
 			const part = shapeToPath(shape, m)
-			if (part) d += (d ? ' ' : '') + part
+			if (part) parts.push(part)
 		}
-		shapeD = d
+		if (combine !== 'concat' && parts.length > 1) {
+			try {
+				const op = OP_MAP[combine]
+				let acc = pathFromPathData(parts[0])
+				for (let i = 1; i < parts.length; i++) {
+					const b = pathFromPathData(parts[i])
+					const res = pathBoolean(acc, FillRule.EvenOdd, b, FillRule.EvenOdd, op)
+					acc = res.flat()
+				}
+				shapeD = pathToPathData(acc)
+			} catch {
+				shapeD = parts.join(' ')
+			}
+		} else {
+			shapeD = parts.join(' ')
+		}
 	}
 
 	let rafId: number | undefined
