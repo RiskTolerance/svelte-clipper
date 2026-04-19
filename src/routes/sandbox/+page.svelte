@@ -99,6 +99,9 @@
 			<p class="lens-label">drag me →</p>
 			<div
 				class="lens-handle lens-a"
+				role="button"
+				tabindex="0"
+				aria-label="Drag orange lens"
 				style="transform: translate({lensA.x}px, {lensA.y}px)"
 				onpointerdown={(e) => startDrag(e, lensA)}
 			>
@@ -110,6 +113,9 @@
 			</div>
 			<div
 				class="lens-handle lens-b"
+				role="button"
+				tabindex="0"
+				aria-label="Drag green lens"
 				style="transform: translate({lensB.x}px, {lensB.y}px)"
 				onpointerdown={(e) => startDrag(e, lensB)}
 			>

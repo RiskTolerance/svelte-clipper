@@ -4,6 +4,10 @@ import { sveltekit } from '@sveltejs/kit/vite';
 
 export default defineConfig({
 	plugins: [sveltekit()],
+	define: {
+		'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV ?? 'development'),
+		'process.env.PATH_BOOL_DEV_ASSERTS': JSON.stringify('')
+	},
 	test: {
 		expect: { requireAssertions: true },
 		projects: [

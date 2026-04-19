@@ -1,65 +1,184 @@
-# Svelte library
+# svelte-clipper
 
-Everything you need to build a Svelte library, powered by [`sv`](https://npmjs.com/package/sv).
+Responsive, reactive SVG clip paths for Svelte 5. Define a clip shape anywhere in the DOM, apply it to anything anywhere else — across independent coordinate spaces, transforms, scroll containers, and CSS animations. Compose multiple shapes together with real boolean operations (union, difference, intersection, …).
 
-Read more about creating a library [in the docs](https://svelte.dev/docs/kit/packaging).
+```svelte
+<script lang="ts">
+ import { Clipper, ClippedBy } from 'svelte-clipper';
+</script>
 
-## Creating a project
+<Clipper id="hole">
+ <svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" /></svg>
+</Clipper>
 
-If you're seeing this, you've probably already done this step. Congrats!
-
-```sh
-# create a new project in the current directory
-npx sv create
-
-# create a new project in my-app
-npx sv create my-app
+<ClippedBy clipper="hole">
+ <img src="/cat.jpg" />
+</ClippedBy>
 ```
 
-To recreate this project with the same configuration:
+## Installation
 
 ```sh
-# recreate this project
-bun x sv@0.15.1 create --template library --types ts --add prettier eslint mcp="ide:claude-code+setup:remote" vitest="usages:unit,component" --install bun DynamicBool
+npm install dynamicbool
 ```
 
-## Developing
+Svelte 5 is a peer dependency.
 
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
+## Why
 
-```sh
-npm run dev
+`clip-path: url(#id)` works, but the clip shape has to live in a coordinate system the target understands. The moment the shape and target have different transforms, sit in different scroll containers, scale differently, or animate independently, the math gets painful fast. `svelte-clipper` watches both sides and continuously re-projects the shape into the target's local space, so you can put the clipper anywhere and the target anywhere and they just line up.
 
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
+## Core components
+
+### `<Clipper>`
+
+Wraps the element(s) that define the clip shape. The shape can be any SVG graphics element (`path`, `circle`, `ellipse`, `rect`, `polygon`, `polyline`) or a container (`svg`, `g`) with any number of nested shapes.
+
+```svelte
+<script lang="ts">
+ import { Clipper } from 'svelte-clipper';
+</script>
+
+<Clipper id="my-shape" preview live>
+ <svg viewBox="0 0 200 200">
+  <polygon points="100,10 40,198 190,78 10,78 160,198" />
+ </svg>
+</Clipper>
 ```
 
-Everything inside `src/lib` is part of your library, everything inside `src/routes` can be used as a showcase or preview app.
+#### Clipper props
 
-## Building
+| Prop       | Type      | Default | Description                                                                                                                              |
+| ---------- | --------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`       | `string`  | —       | Identifier that `ClippedBy` uses to find this shape.                                                                                     |
+| `preview`  | `boolean` | `false` | Renders the shape with a dashed outline so you can see what's being used as the clipper. Otherwise the shape itself is invisible.        |
+| `live`     | `boolean` | `false` | Polls the shape's screen transform every animation frame. Turn on when the shape (or an ancestor) moves via CSS animation / transitions. |
+| `children` | Snippet   | —       | The SVG content.                                                                                                                         |
 
-To build your library:
+### `<ClippedBy>`
 
-```sh
-npm pack
+Wraps the content that should be clipped. Accepts any HTML or SVG — images, divs, entire components.
+
+```svelte
+<script lang="ts">
+ import { ClippedBy } from 'svelte-clipper';
+</script>
+
+<ClippedBy clipper="my-shape" mode="clip">
+ <div class="content">anything in here</div>
+</ClippedBy>
 ```
 
-To create a production version of your showcase app:
+#### ClippedBy props
 
-```sh
-npm run build
+| Prop       | Type                   | Default    | Description                                                                                                                                                                                                                 |
+| ---------- | ---------------------- | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `clipper`  | `string \| string[]`   | —          | One clipper id, or an array to combine several into a single clip.                                                                                                                                                          |
+| `mode`     | `'clip' \| 'subtract'` | `'clip'`   | `'clip'` keeps only what's inside the shape. `'subtract'` keeps everything _except_ the shape (punches a hole).                                                                                                             |
+| `combine`  | `CombineOp`            | `'concat'` | How to fuse multiple clippers. `'concat'` just appends them (with even-odd fill). The others run a real boolean op via `path-bool`: `'union'`, `'difference'`, `'intersection'`, `'exclusion'`, `'division'`, `'fracture'`. |
+| `class`    | `string`               | —          | Forwarded to the wrapper `<div>`. Use this to size the clipping region.                                                                                                                                                     |
+| `children` | Snippet                | —          | The content to clip.                                                                                                                                                                                                        |
+
+## Examples
+
+### Multiple shapes as one clip
+
+```svelte
+<script lang="ts">
+ import { Clipper, ClippedBy } from 'svelte-clipper';
+</script>
+
+<Clipper id="circle-a"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" /></svg></Clipper>
+<Clipper id="circle-b"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" /></svg></Clipper>
+
+<ClippedBy clipper={['circle-a', 'circle-b']} combine="union" mode="subtract">
+ <img src="/photo.jpg" />
+</ClippedBy>
 ```
 
-You can preview the production build with `npm run preview`.
+Two independent SVGs — possibly in very different parts of the page — combined into one hole.
 
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
+### CSS-animated clipper
 
-## Publishing
+```svelte
+<script lang="ts">
+ import { Clipper } from 'svelte-clipper';
+</script>
 
-Go into the `package.json` and give your package the desired name through the `"name"` option. Also consider adding a `"license"` field and point it to a `LICENSE` file which you can create from a template (one popular option is the [MIT license](https://opensource.org/license/mit/)).
+<div class="spinner">
+ <Clipper id="star" live>
+  <svg viewBox="0 0 200 200"><polygon points="..." /></svg>
+ </Clipper>
+</div>
 
-To publish your library to [npm](https://www.npmjs.com):
-
-```sh
-npm publish
+<style>
+ .spinner {
+  animation: spin 6s linear infinite;
+ }
+ @keyframes spin {
+  to {
+   transform: rotate(360deg);
+  }
+ }
+</style>
 ```
+
+`live` polls each frame so the clip tracks the CSS transform. Without it, mutations to the shape itself are still observed, but ancestor CSS animations are not.
+
+### Complex, multi-path SVGs
+
+The `<Clipper>` can wrap an entire `<svg>` containing nested `<g>` elements and many paths — all are combined into the clip shape, including multi-subpath paths with holes (via even-odd fill rule).
+
+## Boolean operations
+
+When passing an array of clippers, `combine` controls how the paths are fused before the final clip is applied. This is powered by [`path-bool`](https://r-flash.github.io/PathBool.js/).
+
+| Op             | Meaning                       |
+| -------------- | ----------------------------- |
+| `concat`       | Append paths (default, fast). |
+| `union`        | A ∪ B (merge overlaps).       |
+| `difference`   | A − B.                        |
+| `intersection` | A ∩ B.                        |
+| `exclusion`    | A XOR B.                      |
+| `division`     | Slice A using B's boundaries. |
+| `fracture`     | Emit every partition.         |
+
+Operations are folded left-to-right for more than two clippers.
+
+## How it works
+
+Under the hood, each `ClippedBy` renders a hidden `<svg><clipPath>` and applies it via `clip-path: url(#...)`. On every layout change (resize, scroll, mutation) or animation frame (in `live` mode), the library:
+
+1. Reads the clipper's current screen-space CTM.
+2. Reads the target's bounding rect.
+3. Composes them into a source → target matrix.
+4. Projects the shape's geometry through that matrix into a `d` string.
+5. Optionally runs a boolean operation against other clippers.
+6. Writes the result to the `<clipPath>`'s `<path>`.
+
+Per-frame updates short-circuit when the composed matrix hasn't changed (e.g. during pure scroll where source and target move together), so the cost is effectively zero when nothing has actually shifted.
+
+## Advanced exports
+
+The registry and projection helpers are exported for custom integrations:
+
+```ts
+import {
+ registerClipper,
+ unregisterClipper,
+ getClipperEl,
+ subscribeClipper,
+ notifyClipper,
+ shapeToPath,
+ SUPPORTED_SHAPE_TAGS,
+ observeLayout
+} from 'svelte-clipper';
+```
+
+## Acknowledgments
+
+Boolean path operations are powered by [path-bool](https://github.com/r-flash/PathBool.js) by [@r-flash](https://github.com/r-flash) (MIT).
+
+## License
+
+MIT

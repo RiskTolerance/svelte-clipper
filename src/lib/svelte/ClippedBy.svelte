@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte'
+	import '../core/process-shim.js'
 	import { shapeToPath } from '$lib/core/clipPath.js'
 	import { observeLayout } from '$lib/core/observe.js'
 	import { getClipperEl, subscribeClipper } from '$lib/core/clipperRegistry.js'

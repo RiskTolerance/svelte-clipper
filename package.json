@@ -1,6 +1,17 @@
 {
-	"name": "dynamicbool",
-	"version": "0.0.1",
+	"name": "svelte-clipper",
+	"version": "0.1.0",
+	"description": "Responsive, reactive SVG clip paths for Svelte 5 — project clip shapes across elements with independent coordinate spaces.",
+	"author": "Isaac Druin <isaac.druin@gmail.com>",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/USERNAME/svelte-clipper.git"
+	},
+	"bugs": {
+		"url": "https://github.com/USERNAME/svelte-clipper/issues"
+	},
+	"homepage": "https://github.com/USERNAME/svelte-clipper#readme",
 	"scripts": {
 		"dev": "vite dev",
 		"build": "vite build && npm run prepack",
@@ -17,7 +28,8 @@
 	"files": [
 		"dist",
 		"!dist/**/*.test.*",
-		"!dist/**/*.spec.*"
+		"!dist/**/*.spec.*",
+		"!dist/svgs"
 	],
 	"sideEffects": [
 		"**/*.css"
@@ -60,7 +72,17 @@
 		"vitest-browser-svelte": "^2.1.0"
 	},
 	"keywords": [
-		"svelte"
+		"svelte",
+		"sveltekit",
+		"svelte5",
+		"clip-path",
+		"svg",
+		"mask",
+		"clipping",
+		"boolean",
+		"path",
+		"responsive",
+		"reactive"
 	],
 	"dependencies": {
 		"path-bool": "^0.0.7"
